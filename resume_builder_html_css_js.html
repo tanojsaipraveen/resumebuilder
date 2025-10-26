@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resume Builder — HTML / CSS / JS</title>
+ <style>
+    :root{
+      --bg:#f6f7fb; --card:#fff; --muted:#6b7280; --accent:#0f172a;
+    }
+    *{box-sizing:border-box}
+    body{font-family:Inter,Segoe UI,Roboto,Arial; margin:0; background:var(--bg); color:#0b1220}
+    .wrap{max-width:1100px;margin:28px auto;padding:18px;display:grid;grid-template-columns:1fr 420px;gap:20px}
+    .card{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(8,15,30,.06)}
+    h2{margin:0 0 8px;font-size:18px}
+    label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+    input[type=text],input[type=email],textarea,select{width:100%;padding:8px;border:1px solid #e6e9ef;border-radius:8px;font-size:14px}
+    textarea{resize:vertical}
+    .row{display:flex;gap:10px}
+    .row > *{flex:1}
+    .muted{color:var(--muted);font-size:13px}
+    .small{font-size:13px}
+    .btn{display:inline-block;padding:8px 12px;border-radius:8px;background:#111827;color:#fff;text-decoration:none;border:none;cursor:pointer}
+    .btn.ghost{background:transparent;color:#111827;border:1px solid #e6e9ef}
+    .controls{display:flex;gap:8px;flex-wrap:wrap}
+
+    /* form layout */
+    .form {max-height:78vh;overflow:auto;padding-right:6px}
+    .section{margin-bottom:12px}
+
+    /* preview */
+    #resume-preview{padding:22px}
+    .header{display:flex;justify-content:space-between;align-items:center}
+    .name{font-size:20px;font-weight:700}
+    .title{color:var(--muted);font-size:14px}
+    .info{margin-top:8px;color:var(--muted);font-size:13px}
+    .line{height:1px;background:#eef2f6;margin:12px 0}
+    .block{margin-bottom:12px}
+    .block h4{margin:0 0 6px;font-size:14px}
+    .item{margin-bottom:8px}
+    .item .meta{font-size:13px;color:var(--muted)}
+    .skills{display:flex;flex-wrap:wrap;gap:8px}
+    .chip{padding:6px 8px;border-radius:999px;border:1px solid #e6e9ef;font-size:13px}
+
+    /* responsive */
+    @media(max-width:980px){.wrap{grid-template-columns:1fr;padding:12px}.card{padding:12px}}
+
+    /* print style: show only preview */
+    @media print{
+      body *{visibility:hidden}
+      #resume-preview, #resume-preview *{visibility:visible}
+      #resume-preview{position:absolute;left:0;top:0;width:100%;}
+
+      /* 👇 ADD THIS RULE TO REMOVE HEADER/FOOTER FROM BROWSER PRINT DIALOG */
+        @page {
+            margin: 0;
+            size: a4; /* Optional: ensures A4 size */
+        }
+    } 
+</style>
+  
+</head>
+<body>
+  <div class="wrap">
+    <div class="card form">
+      <h2>Resume Builder</h2>
+      <div class="section">
+        <h4 class="small">Personal</h4>
+        <div class="row">
+          <div>
+            <label>First name</label>
+            <input id="firstName" type="text" value="John" />
+          </div>
+          <div>
+            <label>Last name</label>
+            <input id="lastName" type="text" value="Doe" />
+          </div>
+        </div>
+        <div style="margin-top:8px">
+          <label>Job title</label>
+          <input id="title" type="text" value="Software Engineer" />
+        </div>
+        <div class="row" style="margin-top:8px">
+          <div>
+            <label>Email</label>
+            <input id="email" type="email" value="john.doe@example.com" />
+          </div>
+          <div>
+            <label>Phone</label>
+            <input id="phone" type="text" value="+91 90000 00000" />
+          </div>
+        </div>
+        <div style="margin-top:8px">
+          <label>Location</label>
+          <input id="location" type="text" value="Bengaluru, India" />
+        </div>
+        <div style="margin-top:8px">
+          <label>Summary</label>
+          <textarea id="summary" rows="3">Product-focused engineer with 5+ years building web & mobile apps. Strong in JavaScript, React and system design.</textarea>
+        </div>
+      </div>
+
+      <div class="section">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h4 class="small">Experience</h4>
+          <button id="addExperience" class="btn ghost">+ Add</button>
+        </div>
+        <div id="experiences"></div>
+      </div>
+
+      <div class="section">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h4 class="small">Education</h4>
+          <button id="addEducation" class="btn ghost">+ Add</button>
+        </div>
+        <div id="educations"></div>
+      </div>
+
+      <div class="section">
+        <h4 class="small">Skills</h4>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="skillInput" type="text" placeholder="Add skill and press Add" />
+          <button id="addSkill" class="btn ghost">Add</button>
+        </div>
+        <div id="skillsList" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px"></div>
+      </div>
+
+      <div class="section controls">
+        <button id="downloadJson" class="btn">Download JSON</button>
+        <button id="printBtn" class="btn">Export / Print PDF</button>
+        <button id="resetBtn" class="btn ghost">Reset</button>
+      </div>
+
+    </div>
+
+    <div id="previewCard" class="card">
+      <div id="resume-preview">
+        <!-- Preview content rendered by JS -->
+      </div>
+    </div>
+  </div>
+
+  <template id="exp-template">
+    <div class="section" data-type="exp">
+      <div class="row">
+        <div>
+          <label>Role</label>
+          <input class="role" type="text" />
+        </div>
+        <div>
+          <label>Company</label>
+          <input class="company" type="text" />
+        </div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div>
+          <label>Start</label>
+          <input class="start" type="text" placeholder="e.g. Jan 2021" />
+        </div>
+        <div>
+          <label>End</label>
+          <input class="end" type="text" placeholder="e.g. Present" />
+        </div>
+      </div>
+      <div style="margin-top:8px">
+        <label>Description</label>
+        <textarea class="desc" rows="3"></textarea>
+      </div>
+      <div style="margin-top:8px;text-align:right">
+        <button class="btn ghost remove">Remove</button>
+      </div>
+    </div>
+  </template>
+
+  <template id="edu-template">
+    <div class="section" data-type="edu">
+      <div class="row">
+        <div>
+          <label>Degree</label>
+          <input class="degree" type="text" />
+        </div>
+        <div>
+          <label>School</label>
+          <input class="school" type="text" />
+        </div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div>
+          <label>Start</label>
+          <input class="start" type="text" />
+        </div>
+        <div>
+          <label>End</label>
+          <input class="end" type="text" />
+        </div>
+      </div>
+      <div style="margin-top:8px">
+        <label>Notes</label>
+        <textarea class="desc" rows="2"></textarea>
+      </div>
+      <div style="margin-top:8px;text-align:right">
+        <button class="btn ghost remove">Remove</button>
+      </div>
+    </div>
+  </template>
+
+  <script>
+    // Simple state managed in-memory and saved to localStorage
+    const state = {
+      personal:{}, experiences:[], educations:[], skills:[]
+    };
+
+    // elements
+    const el = (id)=>document.getElementById(id);
+    const firstName = el('firstName');
+    const lastName = el('lastName');
+    const titleEl = el('title');
+    const email = el('email');
+    const phone = el('phone');
+    const locationEl = el('location');
+    const summary = el('summary');
+
+    const experiencesContainer = el('experiences');
+    const educationsContainer = el('educations');
+    const skillsList = el('skillsList');
+    const skillInput = el('skillInput');
+
+    const resumePreview = el('resume-preview');
+
+    function saveState(){
+      state.personal = {
+        firstName: firstName.value, lastName: lastName.value, title: titleEl.value,
+        email: email.value, phone: phone.value, location: locationEl.value, summary: summary.value
+      };
+      // gather experiences from DOM
+      state.experiences = Array.from(experiencesContainer.querySelectorAll('[data-type="exp"]')).map(node=>({
+        role: node.querySelector('.role').value,
+        company: node.querySelector('.company').value,
+        start: node.querySelector('.start').value,
+        end: node.querySelector('.end').value,
+        description: node.querySelector('.desc').value
+      }));
+      state.educations = Array.from(educationsContainer.querySelectorAll('[data-type="edu"]')).map(node=>({
+        degree: node.querySelector('.degree').value,
+        school: node.querySelector('.school').value,
+        start: node.querySelector('.start').value,
+        end: node.querySelector('.end').value,
+        description: node.querySelector('.desc').value
+      }));
+      state.skills = Array.from(skillsList.querySelectorAll('.chip')).map(c=>c.textContent.trim());
+      localStorage.setItem('resumeBuilderState', JSON.stringify(state));
+    }
+
+    function loadState(){
+      const raw = localStorage.getItem('resumeBuilderState');
+      if(raw){
+        try{const parsed=JSON.parse(raw);Object.assign(state,parsed);}catch(e){console.warn('load fail',e)}
+      }
+      // populate fields
+      firstName.value = state.personal.firstName || firstName.value;
+      lastName.value = state.personal.lastName || lastName.value;
+      titleEl.value = state.personal.title || titleEl.value;
+      email.value = state.personal.email || email.value;
+      phone.value = state.personal.phone || phone.value;
+      locationEl.value = state.personal.location || locationEl.value;
+      summary.value = state.personal.summary || summary.value;
+
+      // experiences
+      experiencesContainer.innerHTML='';
+      (state.experiences.length?state.experiences:[{
+        role:'Frontend Engineer',company:'Acme Corp',start:'Jan 2021',end:'Present',description:'Built UI components and improved performance.'
+      }]).forEach(exp=>{
+        const tpl = document.getElementById('exp-template').content.cloneNode(true);
+        tpl.querySelector('.role').value = exp.role || '';
+        tpl.querySelector('.company').value = exp.company || '';
+        tpl.querySelector('.start').value = exp.start || '';
+        tpl.querySelector('.end').value = exp.end || '';
+        tpl.querySelector('.desc').value = exp.description || '';
+        experiencesContainer.appendChild(tpl);
+      });
+
+      // educations
+      educationsContainer.innerHTML='';
+      (state.educations.length?state.educations:[{
+        degree:'B.Tech Computer Science',school:'Some University',start:'2016',end:'2020',description:'Relevant coursework: Data Structures, OS, DBMS.'
+      }]).forEach(ed=>{
+        const tpl = document.getElementById('edu-template').content.cloneNode(true);
+        tpl.querySelector('.degree').value = ed.degree || '';
+        tpl.querySelector('.school').value = ed.school || '';
+        tpl.querySelector('.start').value = ed.start || '';
+        tpl.querySelector('.end').value = ed.end || '';
+        tpl.querySelector('.desc').value = ed.description || '';
+        educationsContainer.appendChild(tpl);
+      });
+
+      // skills
+      skillsList.innerHTML='';
+      (state.skills.length?state.skills:['JavaScript','React','Node.js']).forEach(s=> addSkillChip(s));
+
+      attachRemoveListeners();
+      renderPreview();
+    }
+
+    function attachRemoveListeners(){
+      Array.from(document.querySelectorAll('.remove')).forEach(btn=>{
+        btn.onclick = (e)=>{ e.target.closest('[data-type]').remove(); saveState(); renderPreview(); };
+      });
+    }
+
+    // Add handlers
+    document.getElementById('addExperience').addEventListener('click', ()=>{
+      const tpl = document.getElementById('exp-template').content.cloneNode(true);
+      experiencesContainer.appendChild(tpl);
+      attachRemoveListeners();
+      saveState();
+    });
+    document.getElementById('addEducation').addEventListener('click', ()=>{
+      const tpl = document.getElementById('edu-template').content.cloneNode(true);
+      educationsContainer.appendChild(tpl);
+      attachRemoveListeners();
+      saveState();
+    });
+
+    function addSkillChip(text){
+      const chip = document.createElement('div');
+      chip.className='chip';
+      chip.textContent = text;
+      chip.title = 'Click to remove';
+      chip.style.cursor='pointer';
+      chip.onclick = ()=>{ chip.remove(); saveState(); renderPreview(); };
+      skillsList.appendChild(chip);
+    }
+
+    document.getElementById('addSkill').addEventListener('click', ()=>{
+      const v = skillInput.value.trim(); if(!v) return; addSkillChip(v); skillInput.value=''; saveState(); renderPreview();
+    });
+
+    // auto-update on input
+    ['input','change'].forEach(evt=>{
+      document.querySelectorAll('input, textarea').forEach(inp=>inp.addEventListener(evt, ()=>{ saveState(); renderPreview(); }));
+    });
+
+    function renderPreview(){
+      // Build HTML for preview
+      const p = state.personal = {
+        firstName:firstName.value, lastName:lastName.value, title:titleEl.value, email:email.value, phone:phone.value, location:locationEl.value, summary:summary.value
+      };
+      const exps = Array.from(experiencesContainer.querySelectorAll('[data-type="exp"]')).map(node=>({
+        role: node.querySelector('.role').value,
+        company: node.querySelector('.company').value,
+        start: node.querySelector('.start').value,
+        end: node.querySelector('.end').value,
+        description: node.querySelector('.desc').value
+      }));
+      const eds = Array.from(educationsContainer.querySelectorAll('[data-type="edu"]')).map(node=>({
+        degree: node.querySelector('.degree').value,
+        school: node.querySelector('.school').value,
+        start: node.querySelector('.start').value,
+        end: node.querySelector('.end').value,
+        description: node.querySelector('.desc').value
+      }));
+      const skills = Array.from(skillsList.querySelectorAll('.chip')).map(c=>c.textContent.trim());
+
+      let html = `
+        <div class="header">
+          <div>
+            <div class="name">${escapeHtml(p.firstName || '')} ${escapeHtml(p.lastName || '')}</div>
+            <div class="title">${escapeHtml(p.title || '')}</div>
+            <div class="info">${escapeHtml(p.email || '')} • ${escapeHtml(p.phone || '')} • ${escapeHtml(p.location || '')}</div>
+          </div>
+        </div>
+        <div class="line"></div>
+        <div class="block">
+          <h4>Summary</h4>
+          <div class="muted">${escapeHtml(p.summary || '')}</div>
+        </div>
+      `;
+
+      if(exps.length){
+        html += `<div class="block"><h4>Experience</h4>`;
+        exps.forEach(e=>{
+          html += `<div class="item"><div style="display:flex;justify-content:space-between"><div><strong>${escapeHtml(e.role)}</strong> — <span class="muted">${escapeHtml(e.company)}</span></div><div class="muted">${escapeHtml(e.start)} — ${escapeHtml(e.end)}</div></div><div class="muted" style="margin-top:6px">${escapeHtml(e.description)}</div></div>`;
+        });
+        html += `</div>`;
+      }
+
+      if(eds.length){
+        html += `<div class="block"><h4>Education</h4>`;
+        eds.forEach(u=>{
+          html += `<div class="item"><div style="display:flex;justify-content:space-between"><div><strong>${escapeHtml(u.degree)}</strong> — <span class="muted">${escapeHtml(u.school)}</span></div><div class="muted">${escapeHtml(u.start)} — ${escapeHtml(u.end)}</div></div><div class="muted" style="margin-top:6px">${escapeHtml(u.description)}</div></div>`;
+        });
+        html += `</div>`;
+      }
+
+      if(skills.length){
+        html += `<div class="block"><h4>Skills</h4><div class="skills">`;
+        skills.forEach(s=> html += `<div class="chip">${escapeHtml(s)}</div>`);
+        html += `</div></div>`;
+      }
+
+      resumePreview.innerHTML = html;
+    }
+
+    function escapeHtml(s){
+      if(!s) return '';
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // Download JSON
+    document.getElementById('downloadJson').addEventListener('click', ()=>{
+      saveState();
+      const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = `${(state.personal.firstName||'resume')}.json`; a.click(); URL.revokeObjectURL(url);
+    });
+
+    // Print / export
+    document.getElementById('printBtn').addEventListener('click', ()=>{
+      saveState();
+      window.print();
+    });
+
+    // Reset
+    document.getElementById('resetBtn').addEventListener('click', ()=>{
+      if(confirm('Clear everything and reset to defaults?')){ localStorage.removeItem('resumeBuilderState'); location.reload(); }
+    });
+
+    // initial load
+    loadState();
+
+  </script>
+</body>
+</html>
